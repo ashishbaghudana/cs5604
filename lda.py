@@ -85,7 +85,7 @@ class LDA(object):
                               top_topics=2, top_n=5):
         document_keywords = {}
         document_topics = {}
-        for _id, doc in self.corpus.documents.values():
+        for _id, doc in self.corpus.documents.items():
             document = self.corpus.dictionary.doc2bow(doc)
             topic_idx = [prob[0] for prob in model.get_document_topics(document)]
             topic_prob = [prob[1] for prob in model.get_document_topics(document)]
