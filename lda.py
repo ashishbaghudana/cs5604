@@ -1,0 +1,192 @@
+from gensim.models.ldamodel import LdaModel
+from gensim.models.coherencemodel import CoherenceModel
+from gensim.corpora import Dictionary
+from utils import WebpageTokensReader, HBaseReader
+from mappers import get_mappers
+from filters import get_filters
+from tokenizers import get_tokenizer
+from pipeline import Pipeline
+from tabulate import tabulate
+
+import os
+import sys
+import logging
+import argparse
+import numpy as np
+
+
+class Constants(object):
+    SAVE_DIR = '/home/cs5604f17_cta/models/{}'
+    SAVE_FILE_FORMAT = '{}_topics_{}_alpha_{}_beta_{}_iterations_{}.model'
+    SAVE_TOPIC_KEYWORDS = '{}_topics_keywords_{}_alpha_{}_beta_{}_iterations_{}.txt'
+    SAVE_DOCUMENT_TOPICS = '{}_document_topics_{}_alpha_{}_beta_{}_iterations_{}.txt'
+    SAVE_DOCUMENT_KEYWORDS = '{}_document_keywords_{}_alpha_{}_beta_{}_iterations_{}.txt'
+
+
+class Corpus(object):
+    def __init__(self, documents, dictionary):
+        self.documents = documents
+        self.dictionary = dictionary
+
+    def __len__(self):
+        return len(self.documents)
+
+    def __iter__(self):
+        for document in self.documents:
+            yield self.dictionary.doc2bow(document)
+
+
+class LDA(object):
+    def __init__(self, corpus, dictionary):
+        self.corpus = corpus
+        self.dictionary = dictionary
+
+    def run_model(self, collection_name, num_topics, save_dir=None, save_file=None, alpha=0.1, beta=0.01,
+                  iterations=800, passes=5):
+        model = LdaModel(corpus=self.corpus, id2word=self.dictionary, num_topics=num_topics, alpha=alpha, eta=beta,
+                             iterations=iterations, passes=passes)
+        if save_dir is None:
+            save_dir = Constants.SAVE_DIR.format(collection_name)
+        if not os.path.isdir(save_dir):
+            os.makedirs(save_dir)
+        if save_file is None:
+            save_file = Constants.SAVE_FILE_FORMAT.format(collection_name, num_topics, alpha, beta, iterations)
+        logging.info(save_dir)
+        model.save(os.path.join(save_dir, save_file))
+        return model
+
+    def run_models(self, collection_name, topics_range, save_dir=None, alpha=0.1, beta=0.01, iterations=800):
+        logging.info('Starting runs of topic modelling')
+        perplexity = []
+        coherence = []
+        for num_topics in topics_range:
+            logging.info('Running topic model on num_topics = %s' % num_topics)
+            model = self.run_model(collection_name, num_topics, save_dir=save_dir, save_file=None, alpha=alpha,
+                                   beta=beta, iterations=iterations)
+            perp = self.check_perplexity(model)
+            logging.info('Perplexity for the model = %s' % perp)
+            perplexity.append(perp)
+            coher = self.check_topic_coherence(model)
+            logging.info('Coherence for the model = %s' % coher)
+            coherence.append(coher)
+
+            save_file_document_topics = os.path.join(save_dir, Constants.SAVE_DOCUMENT_TOPICS.format(
+                collection_name, num_topics, alpha, beta, iterations))
+            save_file_document_keywords = os.path.join(save_dir, Constants.SAVE_DOCUMENT_KEYWORDS.format(
+                collection_name, num_topics, alpha, beta, iterations))
+            save_file_topic_keywords = os.path.join(save_dir, Constants.SAVE_TOPIC_KEYWORDS.format(
+                collection_name, num_topics, alpha, beta, iterations))
+            self.get_document_keywords(model, save_file_document_topics, save_file_document_keywords)
+            self.get_topic_keywords(model, save_file_topic_keywords)
+        return perplexity, coherence
+
+    def get_document_keywords(self, model, save_file_document_topics, save_file_document_keywords,
+                              top_topics=2, top_n=5):
+        document_keywords = []
+        document_topics = []
+        for document in self.corpus:
+            topic_idx = [prob[0] for prob in model.get_document_topics(document)]
+            topic_prob = [prob[1] for prob in model.get_document_topics(document)]
+            if len(topic_prob) > top_topics:
+                topic_idx = np.argpartition(topic_prob, -top_topics)[-top_topics:]
+            top_words = []
+            for topic_id in topic_idx:
+                top_words += [self.dictionary.id2token[token[0]] for token in model.get_topic_terms(topicid=topic_id,
+                                                                                                   topn=top_n)]
+            document_keywords.append(','.join(top_words))
+            topic_idx = ','.join([str(_i) for _i in topic_idx])
+            document_topics.append(topic_idx)
+        with open(save_file_document_topics, 'w') as fwriter:
+            for document in document_topics:
+                fwriter.write(document + '\n')
+        with open(save_file_document_keywords, 'w') as fwriter:
+            for document in document_keywords:
+                fwriter.write(document + '\n')
+
+    def get_topic_keywords(self, model, save_file_topic_keywords, topn=10):
+        topic_terms = []
+        for topicid in range(model.num_topics):
+            terms = ','.join([self.dictionary.id2token[token[0]] for token in model.get_topic_terms(topicid=topicid,
+                                                                                                    topn=topn)])
+            topic_terms.append(terms)
+        with open(save_file_topic_keywords, 'w') as fwriter:
+            for topic in topic_terms:
+                fwriter.write(topic + '\n')
+
+    def check_perplexity(self, model):
+        return model.log_perplexity(self.corpus)
+
+    def check_topic_coherence(self, model, coherence='u_mass'):
+        coherence_model = CoherenceModel(model, dictionary=self.dictionary, corpus=self.corpus, coherence=coherence)
+        return coherence_model.get_coherence()
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Run LDA on Webpage data')
+
+    # Required arguments
+    required_args_parser = parser.add_argument_group('required arguments')
+    required_args_parser.add_argument('-c', '--collection_name', help='Collection name', required=True)
+    required_args_parser.add_argument('-t', '--topics', nargs='+', help='Number of topics to run the model on',
+                                      required=True, type=int)
+    required_args_parser.add_argument('-p', '--preprocess', help='Preprocess data', action='store_true', default=False,
+                                      required=False)
+    required_args_parser.add_argument('--table_name', help='Table name for HBase', required=False)
+    sourcefile = required_args_parser.add_mutually_exclusive_group(required=True)
+    sourcefile.add_argument('-hb', '--hbase', help='Get collection from HBase', action='store_true')
+    sourcefile.add_argument('-f', '--file', help='File name for tokens')
+
+    # Optional arguments with defaults
+    parser.add_argument('-l', '--logs', help='Log directory', default='/tmp/logs')
+    parser.add_argument('-a', '--alpha', help='Alpha hyperparameter', default=0.1, type=float)
+    parser.add_argument('-b', '--beta', help='Beta hyperparameter', default=0.01, type=float)
+    parser.add_argument('-i', '--iter', help='Number of iterations', default=800, type=int)
+    parser.add_argument('--save_dir', help='Save directory for topic models', default=None)
+
+    # Preprocessing arguments with defaults
+    preprocess_parser = parser.add_argument_group('preprocessing arguments to be added when using -p flag')
+    preprocess_parser.add_argument('--tokenizer', help='Tokenizer to use', default='wordtokenizer')
+    preprocess_parser.add_argument('--mappers', help='Mappers to use', nargs='+', default=['lowercasemapper'])
+    preprocess_parser.add_argument('--filters', help='Filters to use', nargs='+', default=['stopwordfilter',
+                                                                                           'punctuationfilter'])
+
+    args = parser.parse_args()
+
+    # Arguments for preprocessing pipeline
+
+    logging.basicConfig(format='%(asctime)s-%(levelname)s: %(message)s', level=logging.INFO)
+    logger = logging.getLogger('LDA')
+    logger.info('Application is starting!')
+
+    if args.preprocess:
+        if args.tokenizer is not None and args.mappers is not None and args.filters is not None:
+            pipeline = Pipeline(tokenizer=get_tokenizer(args.tokenizer), mappers=get_mappers(args.mappers),
+                                filters=get_filters(args.filters))
+        else:
+            logger.critical('Cannot preprocess data if the type of tokenizer, mappers and filters is not given')
+            sys.exit(2)
+    else:
+        pipeline = None
+
+    if args.hbase:
+        documents = HBaseReader(args.table_name, args.collection_name, pipeline=pipeline)
+    else:
+        documents = WebpageTokensReader(args.file)
+
+    dictionary = Dictionary(documents)
+    corpus = Corpus(documents, dictionary)
+
+    lda = LDA(corpus, dictionary)
+    perplexity, coherence = lda.run_models(args.collection_name, args.topics, args.save_dir, alpha=args.alpha,
+                                                   beta=args.beta, iterations=args.iter)
+    topics = ['Num Topics'] + args.topics
+    perplexities = ['Log Perplexity'] + perplexity
+    coherences = ['Coherence (UMass)'] + coherence
+    table = [topics, perplexities, coherences]
+    print (tabulate(table))
+    with open('results_{}.txt'.format(args.collection_name), 'w') as fwriter:
+        fwriter.write(tabulate(table))
+
+
+if __name__ == '__main__':
+    main()
