@@ -44,13 +44,14 @@ class LDA(object):
     def run_model(self, collection_name, num_topics, save_dir=None, save_file=None, alpha=0.1, beta=0.01,
                   iterations=800, passes=5):
         model = LdaModel(corpus=self.corpus, id2word=self.dictionary, num_topics=num_topics, alpha=alpha, eta=beta,
-                             iterations=iterations, passes=passes)
+                         iterations=iterations, passes=passes)
         if save_dir is None:
-            save_dir = Constants.SAVE_DIR.format(collection_name)
+            save_dir = Constants.SAVE_DIR.format(collection_name.lower().replace(' ', '_'))
         if not os.path.isdir(save_dir):
             os.makedirs(save_dir)
         if save_file is None:
-            save_file = Constants.SAVE_FILE_FORMAT.format(collection_name, num_topics, alpha, beta, iterations)
+            save_file = Constants.SAVE_FILE_FORMAT.format(collection_name.lower().replace(' ', '_'), num_topics, alpha,
+                                                          beta, iterations)
         logging.info(save_dir)
         model.save(os.path.join(save_dir, save_file))
         return model
@@ -82,9 +83,10 @@ class LDA(object):
 
     def get_document_keywords(self, model, save_file_document_topics, save_file_document_keywords,
                               top_topics=2, top_n=5):
-        document_keywords = []
-        document_topics = []
-        for document in self.corpus:
+        document_keywords = {}
+        document_topics = {}
+        for _id, doc in self.corpus.documents.values():
+            document = self.corpus.dictionary.doc2bow(doc)
             topic_idx = [prob[0] for prob in model.get_document_topics(document)]
             topic_prob = [prob[1] for prob in model.get_document_topics(document)]
             if len(topic_prob) > top_topics:
@@ -93,15 +95,15 @@ class LDA(object):
             for topic_id in topic_idx:
                 top_words += [self.dictionary.id2token[token[0]] for token in model.get_topic_terms(topicid=topic_id,
                                                                                                    topn=top_n)]
-            document_keywords.append(','.join(top_words))
+            document_keywords[_id] = ','.join(top_words)
             topic_idx = ','.join([str(_i) for _i in topic_idx])
-            document_topics.append(topic_idx)
+            document_topics[_id] = topic_idx
         with open(save_file_document_topics, 'w') as fwriter:
-            for document in document_topics:
-                fwriter.write(document + '\n')
+            for _id, document in document_topics.items():
+                fwriter.write(_id + '\t' + document + '\n')
         with open(save_file_document_keywords, 'w') as fwriter:
-            for document in document_keywords:
-                fwriter.write(document + '\n')
+            for _id, document in document_keywords.items():
+                fwriter.write(_id + '\t' + document + '\n')
 
     def get_topic_keywords(self, model, save_file_topic_keywords, topn=10):
         topic_terms = []
