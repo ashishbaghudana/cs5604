@@ -27,6 +27,7 @@ class HBaseReader(object):
         self.table_name = table_name
         self.collection_name = collection_name
         self.pipeline = pipeline
+        self.preprocess()
 
     def preprocess(self):
         documents = self.database.get_collection_tweets(self.table_name, self.collection_name)
