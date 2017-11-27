@@ -30,7 +30,7 @@ class HBaseReader(object):
         self.preprocess()
 
     def preprocess(self):
-        documents = self.database.get_collection_tweets(self.table_name, self.collection_name)
+        documents = self.database.get_collection_webpages(self.table_name, self.collection_name)
         if self.pipeline is not None:
             for doc in documents:
                 self.documents.append(self.pipeline.preprocess(doc))
