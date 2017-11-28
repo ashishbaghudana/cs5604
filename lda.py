@@ -105,7 +105,7 @@ class LDA(object):
             for _id, document in document_keywords.items():
                 fwriter.write(_id + '\t' + document + '\n')
 
-    def get_topic_keywords(self, model, save_file_topic_keywords, topn=10):
+    def get_topic_keywords(self, model, save_file_topic_keywords, topn=40):
         topic_terms = []
         for topicid in range(model.num_topics):
             terms = ','.join([self.dictionary.id2token[token[0]] for token in model.get_topic_terms(topicid=topicid,
