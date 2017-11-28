@@ -32,8 +32,8 @@ class Database(object):
             if len(row) >= 2 and 'metadata:collection-name' in row[1] and 'metadata:doc-type' in row[1] and \
                             row[1]['metadata:doc-type'] == 'tweet' and \
                             row[1]['metadata:collection-name'] == collection_name:
-                rows.append(row[1]['clean-tweet:tokens'].split(','))
-                documents.append(row[1]['clean-tweet:tokens'])
+                rows.append(row[1]['clean-tweet:clean_tokens'].split(';'))
+                documents.append(row[0] + '\t' + row[1]['clean-tweet:clean_tokens'])
         if output_file is not None:
             with open(output_file, 'w') as fwriter:
                 for document in documents:

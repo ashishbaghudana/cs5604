@@ -186,7 +186,7 @@ def main():
     coherences = ['Coherence (UMass)'] + coherence
     table = [topics, perplexities, coherences]
     print (tabulate(table))
-    with open('results_{}.txt'.format(args.collection_name), 'w') as fwriter:
+    with open('results_{}.txt'.format(args.collection_name.lower().replace('', '_')), 'w') as fwriter:
         fwriter.write(tabulate(table))
 
 
