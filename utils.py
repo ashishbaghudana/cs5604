@@ -19,6 +19,10 @@ class WebpageTokensReader(object):
     def __len__(self):
         return len(self.documents)
 
+    def items(self):
+        for key, value in self.documents.items():
+            yield key, value
+
 
 class HBaseReader(object):
     def __init__(self, table_name, collection_name, pipeline=None):
