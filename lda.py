@@ -164,7 +164,7 @@ def main():
     if args.preprocess:
         if args.tokenizer is not None and args.mappers is not None and args.filters is not None:
             pipeline = Pipeline(tokenizer=get_tokenizer(args.tokenizer), mappers=get_mappers(args.mappers),
-                                filters=get_filters(args.filters))
+                                filters=get_filters(args.filters, args.filter_words))
         else:
             logger.critical('Cannot preprocess data if the type of tokenizer, mappers and filters is not given')
             sys.exit(2)

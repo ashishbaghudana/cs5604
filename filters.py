@@ -61,20 +61,24 @@ class IntegerFilter(Filter):
             return True
 
 
-def get_filters(filter_list):
+def get_filters(filter_list, filter_words=None):
     filters = []
     for filter in filter_list:
-        filters.append(get_filter(filter))
+        filters.append(get_filter(filter, filter_words))
     return filters
 
 
-def get_filter(filter):
+def get_filter(filter, filter_words=None):
     if filter == 'stopwordfilter':
         return StopwordFilter()
     elif filter == 'punctuationfilter':
         return PunctuationFilter()
     elif filter == 'webpagetokensfilter':
-        return WebpageTokensFilter()
+        if filter_words is None:
+            return WebpageTokensFilter()
+        else:
+            filter_words = get_filter_words(filter_words)
+            return WebpageTokensFilter(words=filter_words)
     elif filter == 'integerfilter':
         return IntegerFilter()
 
