@@ -72,11 +72,11 @@ class LDA(object):
             coherence.append(coher)
 
             save_file_document_topics = os.path.join(save_dir, Constants.SAVE_DOCUMENT_TOPICS.format(
-                collection_name, num_topics, alpha, beta, iterations))
+                collection_name.lower().replace(' ', '_'), num_topics, alpha, beta, iterations))
             save_file_document_keywords = os.path.join(save_dir, Constants.SAVE_DOCUMENT_KEYWORDS.format(
-                collection_name, num_topics, alpha, beta, iterations))
+                collection_name.lower().replace(' ', '_'), num_topics, alpha, beta, iterations))
             save_file_topic_keywords = os.path.join(save_dir, Constants.SAVE_TOPIC_KEYWORDS.format(
-                collection_name, num_topics, alpha, beta, iterations))
+                collection_name.lower().replace(' ', '_'), num_topics, alpha, beta, iterations))
             self.get_document_keywords(model, save_file_document_topics, save_file_document_keywords)
             self.get_topic_keywords(model, save_file_topic_keywords)
         return perplexity, coherence
