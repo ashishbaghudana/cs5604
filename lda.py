@@ -100,11 +100,9 @@ class LDA(object):
             document_topics[_id] = topic_idx
         with open(save_file_document_topics, 'w') as fwriter:
             for _id, document in document_topics.items():
-                import pdb; pdb.set_trace()
                 fwriter.write(_id + '\t' + document + '\n')
         with open(save_file_document_keywords, 'w') as fwriter:
             for _id, document in document_keywords.items():
-                import pdb; pdb.set_trace()
                 fwriter.write(_id + '\t' + document + '\n')
 
     def get_topic_keywords(self, model, save_file_topic_keywords, topn=10):
@@ -115,7 +113,6 @@ class LDA(object):
             topic_terms.append(terms)
         with open(save_file_topic_keywords, 'w') as fwriter:
             for topic in topic_terms:
-                import pdb; pdb.set_trace()
                 fwriter.write(topic + '\n')
 
     def check_perplexity(self, model):
