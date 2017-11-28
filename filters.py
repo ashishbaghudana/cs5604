@@ -41,12 +41,24 @@ class PunctuationFilter(Filter):
 
 
 class WebpageTokensFilter(Filter):
-    def __init__(self):
-        self.words = {'username', 'password', 'archive', 'live', 'pictures', 'site', 'advertisement', 'skip', 'share',
-                      'reuters', 'news', 'cbs', 'npr', 'csbn', 'contact', 'media'}
+    def __init__(self, words=None):
+        if words is None:
+            self.words = {'username', 'password', 'archive', 'live', 'pictures', 'site', 'advertisement', 'skip',
+                          'share', 'reuters', 'news', 'cbs', 'npr', 'csbn', 'contact', 'media', 'twitter'}
+        else:
+            self.words = words
 
     def filter(self, token):
         return token not in self.words
+
+
+class IntegerFilter(Filter):
+    def filter(self, token):
+        try:
+            int(token)
+            return False
+        except ValueError:
+            return True
 
 
 def get_filters(filter_list):
@@ -63,3 +75,13 @@ def get_filter(filter):
         return PunctuationFilter()
     elif filter == 'webpagetokensfilter':
         return WebpageTokensFilter()
+    elif filter == 'integerfilter':
+        return IntegerFilter()
+
+
+def get_filter_words(filename):
+    words = set()
+    with open(filename) as freader:
+        for line in freader:
+            words.add(line.strip())
+    return words

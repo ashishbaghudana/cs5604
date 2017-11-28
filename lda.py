@@ -151,6 +151,7 @@ def main():
     preprocess_parser.add_argument('--mappers', help='Mappers to use', nargs='+', default=['lowercasemapper'])
     preprocess_parser.add_argument('--filters', help='Filters to use', nargs='+', default=['stopwordfilter',
                                                                                            'punctuationfilter'])
+    preprocess_parser.add_argument('--filter_words', help='Filename with words to filter out', default=None)
 
     args = parser.parse_args()
 
