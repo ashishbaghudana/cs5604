@@ -24,19 +24,19 @@ class Pipeline(object):
         try:
             assert isinstance(self.tokenizer, Tokenizer)
         except AssertionError:
-            raise ValueError('Please provide a valid tokenizer of type infinitygrams.preprocess.tokenizers.Tokenizer')
+            raise ValueError('Please provide a valid tokenizer of type Tokenizer')
 
         try:
             for mapper_obj in self.mappers:
                 assert isinstance(mapper_obj, Mapper)
         except AssertionError:
-            raise ValueError('Please provide a valid mapper of type infinitygrams.preprocess.tokenizers.Mapper')
+            raise ValueError('Please provide a valid mapper of type Mapper')
 
         try:
             for filter_obj in self.filters:
                 assert isinstance(filter_obj, Filter)
         except AssertionError:
-            raise ValueError('Please provide a valid filter of type infinitygrams.preprocess.tokenizers.Filter')
+            raise ValueError('Please provide a valid filter of type Filter')
 
     def preprocess(self, doc):
         tokens = self.tokenizer.tokenize(doc)

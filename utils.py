@@ -2,15 +2,20 @@ from hbase import Database
 
 
 class WebpageTokensReader(object):
-    def __init__(self, filename):
+    def __init__(self, filename, pipeline=None):
         self.filename = filename
+        self.pipeline = pipeline
         self.documents = {}
         self.preprocess()
 
     def preprocess(self):
         with open(self.filename, 'r') as freader:
-            for line in freader:
-                self.documents[line.split('\t')[0].strip()] = line.split('\t')[1].strip().split(',')
+            if self.pipeline is None:
+                for line in freader:
+                    self.documents[line.split('\t')[0].strip()] = line.split('\t')[1].strip().split(',')
+            else:
+                for line in freader:
+                    self.documents[line.split('\t')[0].strip()] = self.pipeline.preprocess(line.split('\t')[1].strip())
 
     def __iter__(self):
         for document in self.documents.values():

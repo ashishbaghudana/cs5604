@@ -35,6 +35,16 @@ class TweetTokenizer(Tokenizer):
         return self.tokenizer.tokenize(doc)
 
 
+class CommaTokenizer(Tokenizer):
+    def tokenize(self, doc):
+        return doc.split(',')
+
+
+class NoOpTokenizer(Tokenizer):
+    def tokenize(self, doc):
+        return doc
+
+
 def get_tokenizer(tokenizer):
     if tokenizer == 'spacetokenizer':
         return SpaceTokenizer()
@@ -44,5 +54,9 @@ def get_tokenizer(tokenizer):
         return WordPunctTokenizer()
     elif tokenizer == 'tweettokenizer':
         return TweetTokenizer()
+    elif tokenizer == 'commatokenizer':
+        return CommaTokenizer()
+    elif tokenizer == 'nooptokenizer':
+        return NoOpTokenizer()
     else:
         return WordTokenizer()

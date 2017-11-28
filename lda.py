@@ -173,7 +173,7 @@ def main():
     if args.hbase:
         documents = HBaseReader(args.table_name, args.collection_name, pipeline=pipeline)
     else:
-        documents = WebpageTokensReader(args.file)
+        documents = WebpageTokensReader(args.file, pipeline=pipeline)
 
     dictionary = Dictionary(documents)
     corpus = Corpus(documents, dictionary)

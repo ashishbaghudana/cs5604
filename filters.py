@@ -40,6 +40,15 @@ class PunctuationFilter(Filter):
         return token not in self.punctuations
 
 
+class WebpageTokensFilter(Filter):
+    def __init__(self):
+        self.words = {'username', 'password', 'archive', 'live', 'pictures', 'site', 'advertisement', 'skip', 'share',
+                      'reuters', 'news', 'cbs', 'npr', 'csbn', 'contact', 'media'}
+
+    def filter(self, token):
+        return token not in self.words
+
+
 def get_filters(filter_list):
     filters = []
     for filter in filter_list:
@@ -52,3 +61,5 @@ def get_filter(filter):
         return StopwordFilter()
     elif filter == 'punctuationfilter':
         return PunctuationFilter()
+    elif filter == 'webpagetokensfilter':
+        return WebpageTokensFilter()
