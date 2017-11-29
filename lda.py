@@ -1,4 +1,4 @@
-from gensim.models.ldamodel import LdaModel
+from gensim.models.ldamulticore import LdaMulticore
 from gensim.models.coherencemodel import CoherenceModel
 from gensim.corpora import Dictionary
 from utils import WebpageTokensReader, HBaseReader
@@ -43,8 +43,8 @@ class LDA(object):
 
     def run_model(self, collection_name, num_topics, save_dir=None, save_file=None, alpha=0.1, beta=0.01,
                   iterations=800, passes=5):
-        model = LdaModel(corpus=self.corpus, id2word=self.dictionary, num_topics=num_topics, alpha=alpha, eta=beta,
-                         iterations=iterations, passes=passes)
+        model = LdaMulticore(corpus=self.corpus, id2word=self.dictionary, num_topics=num_topics, alpha=alpha, eta=beta,
+                             iterations=iterations, passes=passes)
         if save_dir is None:
             save_dir = Constants.SAVE_DIR.format(collection_name.lower().replace(' ', '_'))
         if not os.path.isdir(save_dir):

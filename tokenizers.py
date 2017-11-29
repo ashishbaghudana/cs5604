@@ -45,6 +45,11 @@ class NoOpTokenizer(Tokenizer):
         return doc
 
 
+class SemicolonTokenizer(Tokenizer):
+    def tokenize(self, doc):
+        return doc.split(';')
+
+
 def get_tokenizer(tokenizer):
     if tokenizer == 'spacetokenizer':
         return SpaceTokenizer()
@@ -58,5 +63,7 @@ def get_tokenizer(tokenizer):
         return CommaTokenizer()
     elif tokenizer == 'nooptokenizer':
         return NoOpTokenizer()
+    elif tokenizer == 'semicolontokenizer':
+        return SemicolonTokenizer()
     else:
         return WordTokenizer()
