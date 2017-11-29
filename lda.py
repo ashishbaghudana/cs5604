@@ -42,7 +42,7 @@ class LDA(object):
         self.dictionary = dictionary
 
     def run_model(self, collection_name, num_topics, save_dir=None, save_file=None, alpha=0.1, beta=0.01,
-                  iterations=800, passes=5):
+                  iterations=800, passes=1):
         model = LdaMulticore(corpus=self.corpus, id2word=self.dictionary, num_topics=num_topics, alpha=alpha, eta=beta,
                              iterations=iterations, passes=passes)
         if save_dir is None:
