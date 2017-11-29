@@ -86,8 +86,6 @@ class LDA(object):
         document_keywords = {}
         document_topics = {}
         for idx, _id, doc in enumerate(self.corpus.documents.items()):
-            if idx + 1 % 10000 == 0:
-                logging.debug('Processed docs: %d' % idx)
             document = self.corpus.dictionary.doc2bow(doc)
             topic_idx = [prob[0] for prob in model.get_document_topics(document)]
             topic_prob = [prob[1] for prob in model.get_document_topics(document)]
@@ -100,6 +98,10 @@ class LDA(object):
             document_keywords[_id] = ','.join(top_words)
             topic_idx = ','.join([str(_i) for _i in topic_idx])
             document_topics[_id] = topic_idx
+
+            if idx + 1 % 10000 == 0:
+                logging.debug('Processed docs: %d' % idx)
+
         with open(save_file_document_topics, 'w') as fwriter:
             for _id, document in document_topics.items():
                 fwriter.write(_id + '\t' + document + '\n')
