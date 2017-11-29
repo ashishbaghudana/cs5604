@@ -85,7 +85,9 @@ class LDA(object):
                               top_topics=2, top_n=5):
         document_keywords = {}
         document_topics = {}
-        for _id, doc in self.corpus.documents.items():
+        for idx, _id, doc in enumerate(self.corpus.documents.items()):
+            if idx + 1 % 10000 == 0:
+                logging.debug('Processed docs: %d' % idx)
             document = self.corpus.dictionary.doc2bow(doc)
             topic_idx = [prob[0] for prob in model.get_document_topics(document)]
             topic_prob = [prob[1] for prob in model.get_document_topics(document)]
@@ -94,7 +96,7 @@ class LDA(object):
             top_words = []
             for topic_id in topic_idx:
                 top_words += [self.dictionary.id2token[token[0]] for token in model.get_topic_terms(topicid=topic_id,
-                                                                                                   topn=top_n)]
+                                                                                                    topn=top_n)]
             document_keywords[_id] = ','.join(top_words)
             topic_idx = ','.join([str(_i) for _i in topic_idx])
             document_topics[_id] = topic_idx

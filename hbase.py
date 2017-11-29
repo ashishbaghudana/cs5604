@@ -39,3 +39,5 @@ class Database(object):
                 for document in documents:
                     fwriter.write(document + '\n')
         return rows
+
+
