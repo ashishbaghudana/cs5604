@@ -7,6 +7,7 @@ from filters import get_filters
 from tokenizers import get_tokenizer
 from pipeline import Pipeline
 from tabulate import tabulate
+from pyLDAvis.gensim import _extract_data
 
 import os
 import sys
@@ -85,12 +86,14 @@ class LDA(object):
                               top_topics=2, top_n=5):
         document_keywords = {}
         document_topics = {}
-        for idx, _id, doc in enumerate(self.corpus.documents.items()):
-            document = self.corpus.dictionary.doc2bow(doc)
-            topic_idx = [prob[0] for prob in model.get_document_topics(document)]
-            topic_prob = [prob[1] for prob in model.get_document_topics(document)]
+        data = _extract_data(model, self.corpus, self.dictionary)
+        topic_probabilities = data['doc_topic_dists']
+        idx = 0
+        for _id, doc in enumerate(self.corpus.documents.items()):
+            topic_idx = np.argpartition(data['doc_topic_dists'][idx], -len(data['doc_topic_dists'][idx]))
+            topic_prob = topic_probabilities[idx]
             if len(topic_prob) > top_topics:
-                topic_idx = np.argpartition(topic_prob, -top_topics)[-top_topics:]
+                topic_idx = topic_idx[-top_topics:]
             top_words = []
             for topic_id in topic_idx:
                 top_words += [self.dictionary.id2token[token[0]] for token in model.get_topic_terms(topicid=topic_id,
@@ -100,7 +103,7 @@ class LDA(object):
             document_topics[_id] = topic_idx
 
             if idx + 1 % 10000 == 0:
-                logging.debug('Processed docs: %d' % idx)
+                logging.info('Processed docs: %d' % idx)
 
         with open(save_file_document_topics, 'w') as fwriter:
             for _id, document in document_topics.items():
@@ -185,7 +188,7 @@ def main():
 
     lda = LDA(corpus, dictionary)
     perplexity, coherence = lda.run_models(args.collection_name, args.topics, args.save_dir, alpha=args.alpha,
-                                                   beta=args.beta, iterations=args.iter)
+                                           beta=args.beta, iterations=args.iter)
     topics = ['Num Topics'] + args.topics
     perplexities = ['Log Perplexity'] + perplexity
     coherences = ['Coherence (UMass)'] + coherence
