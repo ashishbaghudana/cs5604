@@ -102,15 +102,15 @@ class LDA(object):
             topic_idx = ','.join([str(_i) for _i in topic_idx])
             document_topics[_id] = topic_idx
 
-            if idx + 1 % 10000 == 0:
-                logging.info('Processed docs: %d' % idx)
+            logging.info('Processed docs: %d' % idx)
+            idx += 1
 
         with open(save_file_document_topics, 'w') as fwriter:
             for _id, document in document_topics.items():
-                fwriter.write(_id + '\t' + document + '\n')
+                fwriter.write(str(_id) + '\t' + document + '\n')
         with open(save_file_document_keywords, 'w') as fwriter:
             for _id, document in document_keywords.items():
-                fwriter.write(_id + '\t' + document + '\n')
+                fwriter.write(str(_id) + '\t' + document + '\n')
 
     def get_topic_keywords(self, model, save_file_topic_keywords, topn=40):
         topic_terms = []
