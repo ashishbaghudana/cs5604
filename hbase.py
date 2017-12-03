@@ -40,4 +40,22 @@ class Database(object):
                     fwriter.write(document + '\n')
         return rows
 
+    def batch_upload(self, table_name, document_topics_file, topic_names_file=None, batch_size=20000):
+        connection = happybase.Connection(self.host, self.port)
+        table = connection.table(table_name)
+
+        topic_names = {}
+        if topic_names_file is not None:
+            with open(topic_names_file) as freader:
+                for line in freader:
+                    topic_names[int(line.strip().split('\t')[0])] = line.strip().split('\t')[1]
+
+        with table.batch(batch_size=batch_size):
+            with open(document_topics_file) as freader:
+                for line in freader:
+                    _id, topics, topic_ids, topic_prob = line.strip().split('\t')
+                    if topic_names_file is None:
+                        row = table.row(_id)
+                        row.update({'topic:topic:list': topics, 'topic:probability-list': topic_prob})
+                        table.put(_id, row)
 
