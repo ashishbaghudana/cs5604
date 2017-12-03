@@ -1,6 +1,6 @@
 import logging
 import progressbar
-import mmap
+import utils
 
 from hbase import Database
 
@@ -9,7 +9,7 @@ class WebpageTokensReader(object):
     def __init__(self, filename, pipeline=None):
         self.filename = filename
         self.pipeline = pipeline
-        self.num_docs = _raw_in_count(self.filename)
+        self.num_docs = utils.raw_in_count(self.filename)
         self.documents = {}
         self.preprocess()
 
@@ -64,13 +64,3 @@ class HBaseReader(object):
 
     def __len__(self):
         return len(self.documents)
-
-
-def _raw_in_count(filename):
-    f = open(filename, "r+")
-    buf = mmap.mmap(f.fileno(), 0)
-    lines = 0
-    readline = buf.readline
-    while readline():
-        lines += 1
-    return lines

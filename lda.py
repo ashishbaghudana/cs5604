@@ -1,7 +1,7 @@
 from gensim.models.ldamulticore import LdaMulticore
 from gensim.models.coherencemodel import CoherenceModel
 from gensim.corpora import Dictionary
-from utils import WebpageTokensReader, HBaseReader
+from readers import WebpageTokensReader, HBaseReader
 from mappers import get_mappers
 from filters import get_filters
 from tokenizers import get_tokenizer
