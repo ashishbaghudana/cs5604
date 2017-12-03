@@ -78,49 +78,71 @@ class LDA(object):
                 collection_name.lower().replace(' ', '_'), num_topics, alpha, beta, iterations))
             save_file_topic_keywords = os.path.join(save_dir, Constants.SAVE_TOPIC_KEYWORDS.format(
                 collection_name.lower().replace(' ', '_'), num_topics, alpha, beta, iterations))
-            self.get_document_keywords(model, save_file_document_topics, save_file_document_keywords)
-            self.get_topic_keywords(model, save_file_topic_keywords)
+
+            data = _extract_data(model, self.corpus, self.dictionary)
+
+            topic_labels, topic_tokens = self.get_topic_keywords(data, save_file_topic_keywords)
+            self.get_document_keywords(model, save_file_document_topics, save_file_document_keywords, data,
+                                       topic_labels, topic_tokens)
         return perplexity, coherence
 
-    def get_document_keywords(self, model, save_file_document_topics, save_file_document_keywords,
-                              top_topics=2, top_n=5):
-        document_keywords = {}
+    def get_document_keywords(self, model, save_file_document_topics, save_file_document_keywords, data,
+                              topic_labels, topic_tokens, top_topics=3, top_n=40):
+        # document_keywords = {}
         document_topics = {}
-        data = _extract_data(model, self.corpus, self.dictionary)
+        document_labels = {}
+        document_topics_probabilities = {}
+
         topic_probabilities = data['doc_topic_dists']
+
         idx = 0
         for _id, doc in enumerate(self.corpus.documents.items()):
-            topic_idx = np.argpartition(data['doc_topic_dists'][idx], -len(data['doc_topic_dists'][idx]))
-            topic_prob = topic_probabilities[idx]
-            if len(topic_prob) > top_topics:
-                topic_idx = topic_idx[-top_topics:]
+            topic_idx = np.argpartition(data['doc_topic_dists'][idx], -top_topics)[-top_topics:]
+            topic_prob = [topic_probabilities[topic_id] for topic_id in topic_idx]
             top_words = []
+            top_labels = []
             for topic_id in topic_idx:
-                top_words += [self.dictionary.id2token[token[0]] for token in model.get_topic_terms(topicid=topic_id,
-                                                                                                    topn=top_n)]
-            document_keywords[_id] = ','.join(top_words)
-            topic_idx = ','.join([str(_i) for _i in topic_idx])
-            document_topics[_id] = topic_idx
+                top_words.append(topic_tokens[topic_id])
+                top_labels.append(topic_labels[topic_id])
+            # document_keywords[_id] = ','.join(top_words)
+            document_topics[_id] = ','.join(topic_idx)
+            document_topics_probabilities[_id] = ','.join(topic_prob)
+            document_labels[_id] = ','.join(top_labels)
 
             logging.info('Processed docs: %d' % idx)
             idx += 1
 
         with open(save_file_document_topics, 'w') as fwriter:
             for _id, document in document_topics.items():
-                fwriter.write(str(_id) + '\t' + document + '\n')
-        with open(save_file_document_keywords, 'w') as fwriter:
-            for _id, document in document_keywords.items():
-                fwriter.write(str(_id) + '\t' + document + '\n')
+                fwriter.write(str(_id) + document_labels[_id] + '\t' + document + '\t'
+                              + document_topics_probabilities[_id] + '\n')
+        # with open(save_file_document_keywords, 'w') as fwriter:
+        #     for _id, document in document_keywords.items():
+        #         fwriter.write(str(_id) + '\t' + document + '\n')
 
-    def get_topic_keywords(self, model, save_file_topic_keywords, topn=40):
-        topic_terms = []
-        for topicid in range(model.num_topics):
-            terms = ','.join([self.dictionary.id2token[token[0]] for token in model.get_topic_terms(topicid=topicid,
-                                                                                                    topn=topn)])
-            topic_terms.append(terms)
+    def get_topic_keywords(self, save_file_topic_keywords, topic_term_distribution, topn=40):
+        topic_labels = []
+        topic_labels_set = set()
+        topic_tokens = []
+
+        top_terms = []
+        for topic in topic_term_distribution:
+            topic_top_terms = np.argpartition(topic, -topn)[-topn:]
+            top_terms.append(topic_top_terms)
+            top_tokens = ','.join(self.dictionary.id2token[term] for term in topic_top_terms)
+            topic_tokens.append(top_tokens)
+
+            idx = 0
+            while topic_top_terms[idx] in topic_labels_set:
+                idx += 1
+            topic_labels.append(topic_top_terms[idx])
+            topic_labels_set.add(topic_top_terms[idx])
+
         with open(save_file_topic_keywords, 'w') as fwriter:
-            for topic in topic_terms:
-                fwriter.write(topic + '\n')
+            for label, topic in zip(topic_labels, topic_tokens):
+                fwriter.write(label + '\t' + topic + '\n')
+
+        return topic_labels, topic_tokens
 
     def check_perplexity(self, model):
         return model.log_perplexity(self.corpus)
