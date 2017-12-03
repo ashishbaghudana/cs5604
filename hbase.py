@@ -1,4 +1,6 @@
 import happybase
+import progressbar
+from utils import _raw_in_count
 
 
 class Database(object):
@@ -50,9 +52,10 @@ class Database(object):
                 for line in freader:
                     topic_names[int(line.strip().split('\t')[0])] = line.strip().split('\t')[1]
 
+        bar = progressbar.ProgressBar(max_value=_raw_in_count(document_topics_file))
         with table.batch(batch_size=batch_size):
             with open(document_topics_file) as freader:
-                for line in freader:
+                for line in bar(freader):
                     _id, topics, topic_ids, topic_prob = line.strip().split('\t')
                     if topic_names_file is None:
                         row = table.row(_id)
