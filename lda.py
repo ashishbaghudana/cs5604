@@ -142,8 +142,10 @@ class LDA(object):
             topic_labels_set.add(topic_top_terms[idx])
 
         with open(save_file_topic_keywords, 'w') as fwriter:
+            idx = 0
             for label, topic in zip(topic_labels, topic_tokens):
-                fwriter.write(label + '\t' + topic + '\n')
+                fwriter.write(str(idx) + '\t' + label + '\t' + topic + '\n')
+                idx += 1
 
         return topic_labels, topic_tokens
 
