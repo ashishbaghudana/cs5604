@@ -131,11 +131,11 @@ class LDA(object):
         for topic in range(model.num_topics):
             topic_top_terms = np.array(model.show_topic(topicid=topic, topn=topn))[:, 0]
             top_terms.append(topic_top_terms)
-            top_tokens = ','.join(self.dictionary.id2token[term] for term in topic_top_terms)
+            top_tokens = ','.join(topic_top_terms)
             topic_tokens.append(top_tokens)
 
             idx = 0
-            while self.dictionary.id2token[topic_top_terms[idx]] in topic_labels_set:
+            while topic_top_terms[idx] in topic_labels_set:
                 idx += 1
             topic_labels.append(self.dictionary.id2token[topic_top_terms[idx]])
             topic_labels_set.add(topic_top_terms[idx])
