@@ -59,6 +59,6 @@ class Database(object):
                     _id, topics, topic_ids, topic_prob = line.strip().split('\t')
                     if topic_names_file is None:
                         row = table.row(_id)
-                        row.update({'topic:topic:list': topics, 'topic:probability-list': topic_prob})
+                        row.update({'topic:topic-list': topics, 'topic:probability-list': topic_prob})
                         table.put(_id, row)
 
