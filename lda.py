@@ -98,7 +98,7 @@ class LDA(object):
         idx = 0
         for _id, doc in enumerate(self.corpus.documents.items()):
             topic_idx = np.argpartition(data['doc_topic_dists'][idx], -top_topics)[-top_topics:]
-            topic_prob = [topic_probabilities[topic_id] for topic_id in topic_idx]
+            topic_prob = [topic_probabilities[_id][topic_id] for topic_id in topic_idx]
             top_words = []
             top_labels = []
             for topic_id in topic_idx:
