@@ -105,9 +105,9 @@ class LDA(object):
                 top_words.append(topic_tokens[topic_id])
                 top_labels.append(topic_labels[topic_id])
             # document_keywords[_id] = ','.join(top_words)
-            document_topics[_id] = ','.join(topic_idx)
-            document_topics_probabilities[_id] = ','.join(topic_prob)
-            document_labels[_id] = ','.join(top_labels)
+            document_topics[_id] = ','.join([str(i) for i in topic_idx])
+            document_topics_probabilities[_id] = ','.join([str(i) for i in topic_prob])
+            document_labels[_id] = ','.join([str(i) for i in top_labels])
 
             logging.info('Processed docs: %d' % idx)
             idx += 1
@@ -187,7 +187,7 @@ def main():
 
     # Arguments for preprocessing pipeline
 
-    logging.basicConfig(format='%(asctime)s-%(levelname)s: %(message)s', level=logging.INFO)
+    logging.basicConfig(format='%(asctime)s-%(levelname)s: %(message)s', level=logging.WARN)
     logger = logging.getLogger('LDA')
     logger.info('Application is starting!')
 
