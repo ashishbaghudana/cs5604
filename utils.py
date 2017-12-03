@@ -1,3 +1,7 @@
+import logging
+import progressbar
+
+from itertools import (takewhile,repeat)
 from hbase import Database
 
 
@@ -5,17 +9,23 @@ class WebpageTokensReader(object):
     def __init__(self, filename, pipeline=None):
         self.filename = filename
         self.pipeline = pipeline
+        self.num_docs = _raw_in_count(self.filename)
         self.documents = {}
         self.preprocess()
 
     def preprocess(self):
+        logging.info('Start preprocessing all documents')
+        bar = progressbar.ProgressBar(maxval=self.num_docs)
         with open(self.filename, 'r') as freader:
             if self.pipeline is None:
                 for line in freader:
                     self.documents[line.split('\t')[0].strip()] = line.split('\t')[1].strip().split(',')
+                    bar.update(bar.currval + 1)
             else:
+                logging.info('Using the preprocessing pipeline to process each document')
                 for line in freader:
                     self.documents[line.split('\t')[0].strip()] = self.pipeline.preprocess(line.split('\t')[1].strip())
+                    bar.update(bar.currval + 1)
 
     def __iter__(self):
         for document in self.documents.values():
@@ -57,3 +67,8 @@ class HBaseReader(object):
     def __len__(self):
         return len(self.documents)
 
+
+def _raw_in_count(filename):
+    f = open(filename, 'rb')
+    bufgen = takewhile(lambda x: x, (f.raw.read(1024*1024) for _ in repeat(None)))
+    return sum( buf.count(b'\n') for buf in bufgen )
