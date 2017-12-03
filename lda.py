@@ -81,7 +81,7 @@ class LDA(object):
 
             data = _extract_data(model, self.corpus, self.dictionary)
 
-            topic_labels, topic_tokens = self.get_topic_keywords(save_file_topic_keywords, data['topic_term_dists'])
+            topic_labels, topic_tokens = self.get_topic_keywords(model, save_file_topic_keywords)
             self.get_document_keywords(model, save_file_document_topics, save_file_document_keywords, data,
                                        topic_labels, topic_tokens)
         return perplexity, coherence
@@ -122,15 +122,14 @@ class LDA(object):
         #     for _id, document in document_keywords.items():
         #         fwriter.write(str(_id) + '\t' + document + '\n')
 
-    def get_topic_keywords(self, save_file_topic_keywords, topic_term_distribution, topn=40):
+    def get_topic_keywords(self, model, save_file_topic_keywords, topic_term_distribution, topn=40):
         topic_labels = []
         topic_labels_set = set()
         topic_tokens = []
 
         top_terms = []
         for topic in topic_term_distribution:
-
-            topic_top_terms = np.argpartition(topic, -topn)[-topn:]
+            topic_top_terms = np.array(model.show_topic(topicid=topic, topn=topn))[:, 0]
             top_terms.append(topic_top_terms)
             top_tokens = ','.join(self.dictionary.id2token[term] for term in topic_top_terms)
             topic_tokens.append(top_tokens)
