@@ -137,7 +137,7 @@ class LDA(object):
             idx = 0
             while topic_top_terms[idx] in topic_labels_set:
                 idx += 1
-            topic_labels.append(self.dictionary.id2token[topic_top_terms[idx]])
+            topic_labels.append(topic_top_terms[idx])
             topic_labels_set.add(topic_top_terms[idx])
 
         with open(save_file_topic_keywords, 'w') as fwriter:
