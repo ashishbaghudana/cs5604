@@ -14,6 +14,7 @@ import sys
 import logging
 import argparse
 import numpy as np
+import progressbar
 
 
 class Constants(object):
@@ -94,9 +95,10 @@ class LDA(object):
         document_topics_probabilities = {}
 
         topic_probabilities = data['doc_topic_dists']
-
+        logging.info('Getting words for documents')
+        bar = progressbar.ProgressBar(max_value=self.corpus.documents.num_docs)
         idx = 0
-        for _id, doc in enumerate(self.corpus.documents.items()):
+        for _id, doc in bar(enumerate(self.corpus.documents.items())):
             topic_idx = np.argpartition(data['doc_topic_dists'][idx], -top_topics)[-top_topics:]
             topic_prob = [topic_probabilities[_id][topic_id] for topic_id in topic_idx]
             top_words = []
@@ -109,8 +111,8 @@ class LDA(object):
             document_topics_probabilities[_id] = ','.join([str(i) for i in topic_prob])
             document_labels[_id] = ','.join([str(i) for i in top_labels])
 
-            logging.info('Processed docs: %d' % idx)
-            idx += 1
+            # logging.info('Processed docs: %d' % idx)
+            # idx += 1
 
         with open(save_file_document_topics, 'w') as fwriter:
             idx = 0
