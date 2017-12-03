@@ -1,7 +1,7 @@
 import logging
 import progressbar
+import mmap
 
-from itertools import (takewhile,repeat)
 from hbase import Database
 
 
@@ -69,6 +69,10 @@ class HBaseReader(object):
 
 
 def _raw_in_count(filename):
-    f = open(filename, 'rb')
-    bufgen = takewhile(lambda x: x, (f.raw.read(1024*1024) for _ in repeat(None)))
-    return sum( buf.count(b'\n') for buf in bufgen )
+    f = open(filename, "r+")
+    buf = mmap.mmap(f.fileno(), 0)
+    lines = 0
+    readline = buf.readline
+    while readline():
+        lines += 1
+    return lines
