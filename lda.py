@@ -113,9 +113,9 @@ class LDA(object):
             idx += 1
 
         with open(save_file_document_topics, 'w') as fwriter:
-            for _id, document in document_topics.items():
-                fwriter.write(str(_id) + document_labels[_id] + '\t' + document + '\t'
-                              + document_topics_probabilities[_id] + '\n')
+            for document in document_topics.values():
+                fwriter.write(self.corpus.documents.keys()[_id] + '\t' + document_labels[_id] + '\t' + document + '\t'
+                              + ','.join([str(i) for i in document_topics_probabilities[_id]]) + '\n')
         # with open(save_file_document_keywords, 'w') as fwriter:
         #     for _id, document in document_keywords.items():
         #         fwriter.write(str(_id) + '\t' + document + '\n')
