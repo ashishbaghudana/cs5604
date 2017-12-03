@@ -122,13 +122,13 @@ class LDA(object):
         #     for _id, document in document_keywords.items():
         #         fwriter.write(str(_id) + '\t' + document + '\n')
 
-    def get_topic_keywords(self, model, save_file_topic_keywords, topic_term_distribution, topn=40):
+    def get_topic_keywords(self, model, save_file_topic_keywords, topn=40):
         topic_labels = []
         topic_labels_set = set()
         topic_tokens = []
 
         top_terms = []
-        for topic in topic_term_distribution:
+        for topic in range(model.num_topics):
             topic_top_terms = np.array(model.show_topic(topicid=topic, topn=topn))[:, 0]
             top_terms.append(topic_top_terms)
             top_tokens = ','.join(self.dictionary.id2token[term] for term in topic_top_terms)
