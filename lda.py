@@ -7,7 +7,10 @@ from filters import get_filters
 from tokenizers import get_tokenizer
 from pipeline import Pipeline
 from tabulate import tabulate
-from pyLDAvis.gensim import _extract_data
+from pyLDAvis.gensim import _extract_data, prepare
+from pyLDAvis import save_html
+from timeit import default_timer as timer
+from datetime import timedelta
 
 import os
 import sys
@@ -20,6 +23,7 @@ import progressbar
 class Constants(object):
     SAVE_DIR = '/home/cs5604f17_cta/models/{}'
     SAVE_FILE_FORMAT = '{}_topics_{}_alpha_{}_beta_{}_iterations_{}.model'
+    SAVE_HTML_FORMAT = '{}_topics_{}_alpha_{}_beta_{}_iterations_{}.html'
     SAVE_TOPIC_KEYWORDS = '{}_topics_keywords_{}_alpha_{}_beta_{}_iterations_{}.txt'
     SAVE_DOCUMENT_TOPICS = '{}_document_topics_{}_alpha_{}_beta_{}_iterations_{}.txt'
     SAVE_DOCUMENT_KEYWORDS = '{}_document_keywords_{}_alpha_{}_beta_{}_iterations_{}.txt'
@@ -64,13 +68,24 @@ class LDA(object):
         coherence = []
         for num_topics in topics_range:
             logging.info('Running topic model on num_topics = %s' % num_topics)
+            start = timer()
             model = self.run_model(collection_name, num_topics, save_dir=save_dir, save_file=None, alpha=alpha,
                                    beta=beta, iterations=iterations)
+            end = timer()
+            logging.info('Time taken to create model = %s min' % str(timedelta(seconds=end-start)))
+
+            start = timer()
             perp = self.check_perplexity(model)
+            end = timer()
             logging.info('Perplexity for the model = %s' % perp)
+            logging.info('Time taken to calculate perplexity = %s' % str(timedelta(seconds=end-start)))
             perplexity.append(perp)
+
+            start = timer()
             coher = self.check_topic_coherence(model)
+            end = timer()
             logging.info('Coherence for the model = %s' % coher)
+            logging.info('Time taken to calculate topic coherence = %s' % str(timedelta(seconds=end-start)))
             coherence.append(coher)
 
             save_file_document_topics = os.path.join(save_dir, Constants.SAVE_DOCUMENT_TOPICS.format(
@@ -81,6 +96,11 @@ class LDA(object):
                 collection_name.lower().replace(' ', '_'), num_topics, alpha, beta, iterations))
 
             data = _extract_data(model, self.corpus, self.dictionary)
+            prepared_data = prepare(topic_model=model, corpus=self.corpus, dictionary=self.dictionary)
+            save_file = Constants.SAVE_HTML_FORMAT.format(collection_name.lower().replace(' ', '_'), num_topics, alpha,
+                                                          beta, iterations)
+            with open(os.path.join(save_dir, save_file), 'w') as fwriter:
+                save_html(prepared_data, fwriter)
 
             topic_labels, topic_tokens = self.get_topic_keywords(model, save_file_topic_keywords)
             self.get_document_keywords(model, save_file_document_topics, save_file_document_keywords, data,
@@ -159,7 +179,7 @@ class LDA(object):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Run LDA on Webpage data')
+    parser = argparse.ArgumentParser(description='Run LDA on a given collection')
 
     # Required arguments
     required_args_parser = parser.add_argument_group('required arguments')
@@ -206,13 +226,19 @@ def main():
     else:
         pipeline = None
 
+    start = timer()
     if args.hbase:
         documents = HBaseReader(args.table_name, args.collection_name, pipeline=pipeline)
     else:
         documents = WebpageTokensReader(args.file, pipeline=pipeline)
+    end = timer()
+    logging.info('Preprocessing time = %s' % str(timedelta(seconds=end-start)))
 
+    start = timer()
     dictionary = Dictionary(documents)
     corpus = Corpus(documents, dictionary)
+    end = timer()
+    logging.info('Time taken to build vocabulary = %s' % str(timedelta(seconds=end-start)))
 
     lda = LDA(corpus, dictionary)
     perplexity, coherence = lda.run_models(args.collection_name, args.topics, args.save_dir, alpha=args.alpha,
