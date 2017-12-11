@@ -1,6 +1,7 @@
 import happybase
 import progressbar
 from utils import raw_in_count
+import numpy as np
 
 
 class Database(object):
@@ -51,7 +52,6 @@ class Database(object):
             with open(topic_names_file) as freader:
                 for line in freader:
                     topic_names[int(line.strip().split('\t')[0])] = line.strip().split('\t')[1]
-
         bar = progressbar.ProgressBar(max_value=raw_in_count(document_topics_file))
         with table.batch(batch_size=batch_size):
             with open(document_topics_file) as freader:
@@ -59,6 +59,18 @@ class Database(object):
                     _id, topics, topic_ids, topic_prob = line.strip().split('\t')
                     if topic_names_file is None:
                         row = table.row(_id)
-                        row.update({'topic:topic-list': topics, 'topic:probability-list': topic_prob})
+                        topic_array = topics.split(',')
+                        topic_probability_array = [float(f) for f in topic_prob.split(',')]
+                        top_topic = topic_array[np.argmax(topic_probability_array)]
+                        row.update({'topic:topic-list': topics, 'topic:probability-list': topic_prob, 'topic:topic-displaynames': top_topic})
                         table.put(_id, row)
-
+                    else:
+                        row = table.row(_id)
+                        topics = []
+                        for topic_id in topic_ids.split(','):
+                            topics.append(topic_names[int(topic_id)])
+                        topic_probability_array = [float(f) for f in topic_prob.split(',')]
+                        top_topic = topics[np.argmax(topic_probability_array)]
+                        # print topic_prob, np.argmax(topic_prob), top_topic, topics; break
+                        row.update({'topic:topic-list': ','.join(topics), 'topic:probability-list': topic_prob, 'topic:topic-displaynames': top_topic})
+                        table.put(_id, row)
